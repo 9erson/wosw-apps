@@ -1,13 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { IdeaTopicsService } from '@/lib/services/ideaTopics.service';
 import { updateIdeaTopicSchema } from '@/lib/validations/ideaTopic.schema';
+import { ZodError } from 'zod';
+import { getAuthenticatedUser } from '@/lib/auth/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const topic = await IdeaTopicsService.findById(params.id);
+    // Check authentication
+    const { user, error } = await getAuthenticatedUser();
+    if (error || !user) {
+      return NextResponse.json(
+        { error: error || 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+    const topic = await IdeaTopicsService.findById(user.id, id);
     
     if (!topic) {
       return NextResponse.json(
@@ -28,20 +40,30 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const { user, error } = await getAuthenticatedUser();
+    if (error || !user) {
+      return NextResponse.json(
+        { error: error || 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
     const body = await request.json();
     const validatedData = updateIdeaTopicSchema.parse(body);
     
-    const topic = await IdeaTopicsService.update(params.id, validatedData);
+    const topic = await IdeaTopicsService.update(user.id, id, validatedData);
     return NextResponse.json(topic);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating idea topic:', error);
     
-    if (error.name === 'ZodError') {
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'Invalid input data', details: error.errors },
+        { error: 'Invalid input data', details: error.issues },
         { status: 400 }
       );
     }
@@ -55,10 +77,20 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await IdeaTopicsService.delete(params.id);
+    // Check authentication
+    const { user, error } = await getAuthenticatedUser();
+    if (error || !user) {
+      return NextResponse.json(
+        { error: error || 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+    await IdeaTopicsService.delete(user.id, id);
     return NextResponse.json({ message: 'Idea topic deleted successfully' });
   } catch (error) {
     console.error('Error deleting idea topic:', error);

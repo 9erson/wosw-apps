@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import SearchBar from '@/components/SearchBar';
@@ -16,7 +16,7 @@ export default function TopicDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTopic = async () => {
+  const fetchTopic = useCallback(async () => {
     try {
       const response = await fetch(`/api/idea-topics/${topicId}`);
       if (!response.ok) throw new Error('Failed to fetch topic');
@@ -26,9 +26,9 @@ export default function TopicDetailsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
-  };
+  }, [topicId]);
 
-  const fetchIdeas = async (search?: string) => {
+  const fetchIdeas = useCallback(async (search?: string) => {
     try {
       const url = search 
         ? `/api/idea-topics/${topicId}/ideas?search=${encodeURIComponent(search)}`
@@ -42,7 +42,7 @@ export default function TopicDetailsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
-  };
+  }, [topicId]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -52,7 +52,7 @@ export default function TopicDetailsPage() {
     };
     
     loadData();
-  }, [topicId]);
+  }, [topicId, fetchTopic, fetchIdeas]);
 
   const handleSearch = (search: string) => {
     fetchIdeas(search);

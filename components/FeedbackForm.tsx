@@ -14,7 +14,6 @@ interface FeedbackFormProps {
 }
 
 export default function FeedbackForm({ 
-  ideaId, 
   onSubmit,
   initialRating = 0,
   initialFeedback = null

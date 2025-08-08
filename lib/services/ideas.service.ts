@@ -2,10 +2,10 @@ import { supabase, type Idea } from '@/lib/supabase/client';
 import { CreateIdeaInput, UpdateIdeaInput, AddFeedbackInput } from '@/lib/validations/idea.schema';
 
 export class IdeasService {
-  static async create(data: CreateIdeaInput): Promise<Idea> {
+  static async create(userId: string, data: CreateIdeaInput): Promise<Idea> {
     const { data: idea, error } = await supabase
       .from('Idea')
-      .insert(data)
+      .insert({ ...data, user_id: userId })
       .select()
       .single();
 
@@ -13,8 +13,12 @@ export class IdeasService {
     return idea;
   }
 
-  static async findAll(search?: string): Promise<Idea[]> {
-    let query = supabase.from('Idea').select('*').order('createdAt', { ascending: false });
+  static async findAll(userId: string, search?: string): Promise<Idea[]> {
+    let query = supabase
+      .from('Idea')
+      .select('*')
+      .eq('user_id', userId)
+      .order('createdAt', { ascending: false });
 
     if (search) {
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
@@ -25,10 +29,11 @@ export class IdeasService {
     return data || [];
   }
 
-  static async findByTopicId(topicId: string, search?: string): Promise<Idea[]> {
+  static async findByTopicId(userId: string, topicId: string, search?: string): Promise<Idea[]> {
     let query = supabase
       .from('Idea')
       .select('*')
+      .eq('user_id', userId)
       .eq('ideaTopicId', topicId)
       .order('createdAt', { ascending: false });
 
@@ -41,22 +46,24 @@ export class IdeasService {
     return data || [];
   }
 
-  static async findById(id: string): Promise<Idea | null> {
+  static async findById(userId: string, id: string): Promise<Idea | null> {
     const { data, error } = await supabase
       .from('Idea')
       .select('*')
       .eq('id', id)
+      .eq('user_id', userId)
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   }
 
-  static async update(id: string, data: UpdateIdeaInput): Promise<Idea> {
+  static async update(userId: string, id: string, data: UpdateIdeaInput): Promise<Idea> {
     const { data: idea, error } = await supabase
       .from('Idea')
       .update(data)
       .eq('id', id)
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -64,7 +71,7 @@ export class IdeasService {
     return idea;
   }
 
-  static async addFeedback(id: string, feedbackData: AddFeedbackInput): Promise<Idea> {
+  static async addFeedback(userId: string, id: string, feedbackData: AddFeedbackInput): Promise<Idea> {
     const { data: idea, error } = await supabase
       .from('Idea')
       .update({
@@ -72,6 +79,7 @@ export class IdeasService {
         feedback: feedbackData.feedback,
       })
       .eq('id', id)
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -79,19 +87,21 @@ export class IdeasService {
     return idea;
   }
 
-  static async delete(id: string): Promise<void> {
+  static async delete(userId: string, id: string): Promise<void> {
     const { error } = await supabase
       .from('Idea')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', userId);
 
     if (error) throw error;
   }
 
-  static async searchByTags(tags: string[]): Promise<Idea[]> {
+  static async searchByTags(userId: string, tags: string[]): Promise<Idea[]> {
     const { data, error } = await supabase
       .from('Idea')
       .select('*')
+      .eq('user_id', userId)
       .contains('tags', tags)
       .order('createdAt', { ascending: false });
 

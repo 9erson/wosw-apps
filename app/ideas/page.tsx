@@ -6,14 +6,19 @@ import SearchBar from '@/components/SearchBar';
 import IdeaTopicCard from '@/components/IdeaTopicCard';
 import CreateIdeaTopicModal from '@/components/CreateIdeaTopicModal';
 import { IdeaTopic } from '@/lib/supabase/client';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { useAuth } from '@/lib/contexts/AuthContext';
 
 export default function IdeasPage() {
+  const { user } = useAuth();
   const [topics, setTopics] = useState<IdeaTopic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const fetchTopics = useCallback(async (search?: string) => {
+    if (!user) return; // Don't fetch if not authenticated
+    
     try {
       setLoading(true);
       const url = search 
@@ -21,20 +26,28 @@ export default function IdeasPage() {
         : '/api/idea-topics';
       
       const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch topics');
-      
-      const data = await response.json();
-      setTopics(data);
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError('Please sign in to view your ideas');
+        } else {
+          throw new Error('Failed to fetch topics');
+        }
+      } else {
+        const data = await response.json();
+        setTopics(data);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
-    fetchTopics();
-  }, [fetchTopics]);
+    if (user) {
+      fetchTopics();
+    }
+  }, [fetchTopics, user]);
 
   const handleSearch = useCallback((search: string) => {
     fetchTopics(search);
@@ -47,7 +60,7 @@ export default function IdeasPage() {
   }, []);
 
   return (
-    <>
+    <ProtectedRoute>
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold">Idea Topics</h1>
@@ -108,6 +121,6 @@ export default function IdeasPage() {
         onClose={() => setShowCreateModal(false)}
         onSuccess={handleTopicCreated}
       />
-    </>
+    </ProtectedRoute>
   );
 }

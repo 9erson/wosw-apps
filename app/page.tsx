@@ -1,12 +1,18 @@
+'use client';
+
 import Link from "next/link";
+import { useAuth } from "@/lib/contexts/AuthContext";
 
 export default function Home() {
+  const { user, loading } = useAuth();
   return (
     <div className="min-h-screen bg-base-200">
       <div className="container mx-auto px-4 py-8">
         <header className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-2">Within Our Sacred Walls Apps</h1>
-          <p className="text-lg text-base-content/70">Welcome to our collection of applications</p>
+          <p className="text-lg text-base-content/70">
+            {loading ? 'Loading...' : user ? `Welcome back, ${user.email}!` : 'Welcome to our collection of applications'}
+          </p>
         </header>
 
         <main className="max-w-4xl mx-auto">
@@ -22,11 +28,21 @@ export default function Home() {
                 </figure>
                 <div className="card-body items-center text-center">
                   <h2 className="card-title">Ideas</h2>
-                  <p>Browse and share creative ideas across various topics</p>
+                  <p>{user ? 'Manage your personal ideas and topics' : 'Browse and share creative ideas across various topics'}</p>
                   <div className="card-actions">
-                    <div className="badge badge-outline">Explore</div>
-                    <div className="badge badge-outline">Create</div>
-                    <div className="badge badge-outline">Share</div>
+                    {user ? (
+                      <>
+                        <div className="badge badge-outline">My Ideas</div>
+                        <div className="badge badge-outline">Create</div>
+                        <div className="badge badge-outline">Manage</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="badge badge-outline">Explore</div>
+                        <div className="badge badge-outline">Sign Up</div>
+                        <div className="badge badge-outline">Get Started</div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

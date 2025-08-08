@@ -25,7 +25,7 @@ export default function CreateIdeaTopicForm({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const validateField = (field: keyof CreateIdeaTopicInput, value: any) => {
+  const validateField = (field: keyof CreateIdeaTopicInput, value: CreateIdeaTopicInput[keyof CreateIdeaTopicInput]) => {
     try {
       const partialSchema = createIdeaTopicSchema.pick({ [field]: true });
       partialSchema.parse({ [field]: value });
@@ -46,7 +46,7 @@ export default function CreateIdeaTopicForm({
     }
   };
 
-  const handleInputChange = (field: keyof CreateIdeaTopicInput, value: any) => {
+  const handleInputChange = (field: keyof CreateIdeaTopicInput, value: CreateIdeaTopicInput[keyof CreateIdeaTopicInput]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Validate on change for better UX
     if (errors[field]) {
