@@ -1,4 +1,6 @@
 import { vi } from 'vitest'
+import '@testing-library/jest-dom'
+import React from 'react'
 
 // Mock Next.js router
 vi.mock('next/navigation', () => ({
@@ -18,3 +20,9 @@ vi.mock('next/navigation', () => ({
 vi.mock('next/image', () => ({
   default: (props: any) => props,
 }))
+
+// Mock Next.js Link component
+vi.mock('next/link', () => ({
+  default: ({ children, href, className }: { children: React.ReactNode; href: string; className?: string }) => 
+    React.createElement('a', { href, className }, children)
+}));
