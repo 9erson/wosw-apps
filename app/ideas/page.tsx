@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import SearchBar from '@/components/SearchBar';
 import IdeaTopicCard from '@/components/IdeaTopicCard';
+import CreateIdeaTopicModal from '@/components/CreateIdeaTopicModal';
 import { IdeaTopic } from '@/lib/supabase/client';
 
 export default function IdeasPage() {
   const [topics, setTopics] = useState<IdeaTopic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const fetchTopics = async (search?: string) => {
+  const fetchTopics = useCallback(async (search?: string) => {
     try {
       setLoading(true);
       const url = search 
@@ -28,15 +30,21 @@ export default function IdeasPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTopics();
-  }, []);
+  }, [fetchTopics]);
 
-  const handleSearch = (search: string) => {
+  const handleSearch = useCallback((search: string) => {
     fetchTopics(search);
-  };
+  }, [fetchTopics]);
+
+  const handleTopicCreated = useCallback((newTopic: IdeaTopic) => {
+    // Add the new topic to the list (optimistic update)
+    setTopics(prev => [newTopic, ...prev]);
+    setShowCreateModal(false);
+  }, []);
 
   return (
     <>
@@ -45,9 +53,17 @@ export default function IdeasPage() {
           <h1 className="text-3xl font-bold">Idea Topics</h1>
           <p className="text-base-content/70 mt-2">Explore and discover creative ideas</p>
         </div>
-        <Link href="/" className="btn btn-ghost">
-          Back to Home
-        </Link>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="btn btn-primary"
+          >
+            Create Topic
+          </button>
+          <Link href="/" className="btn btn-ghost">
+            Back to Home
+          </Link>
+        </div>
       </div>
 
       <div className="mb-6">
@@ -86,6 +102,12 @@ export default function IdeasPage() {
           ))}
         </div>
       )}
+
+      <CreateIdeaTopicModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={handleTopicCreated}
+      />
     </>
   );
 }
